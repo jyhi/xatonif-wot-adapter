@@ -1,16 +1,15 @@
-extern crate curl;
-extern crate diesel;
-extern crate serde_json;
+#![feature(plugin)]
+#![plugin(rocket_codegen)]
 
-use std::io::*;
-use curl::easy::Easy;
+extern crate rocket;
+
+// extern crate serde;
+// // #[macro_use]
+// extern crate serde_derive;
+// extern crate serde_json;
+
+mod http_server;
 
 fn main() {
-    let mut curl_handler = Easy::new();
-
-    curl_handler.url("http://10.42.0.232/").unwrap();
-    curl_handler.write_function(|data| {
-        Ok(stdout().write(data).unwrap())
-    }).unwrap();
-    curl_handler.perform().unwrap();
+    rocket::ignite().mount("/", routes![http_server::root]).launch();
 }
