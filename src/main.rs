@@ -6,6 +6,11 @@ extern crate rocket;
 extern crate diesel;
 extern crate dotenv;
 
+extern crate serde;
+#[macro_use]
+extern crate serde_json;
+// extern crate serde_derive;
+
 extern crate reqwest;
 
 mod db;
@@ -15,9 +20,9 @@ mod models;
 use diesel::prelude::*;
 use models::*;
 use schema::device_list::dsl::*;
-use reqwest::Client;
 use dotenv::dotenv;
 use std::env;
+use reqwest::Client;
 
 #[get("/")]
 fn root() -> &'static str {
@@ -48,7 +53,7 @@ fn feeder_on() -> String {
 
     let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
     let client = Client::new();
-    let req = client.put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).json("{on: true}").build().unwrap();
+    let req = client.put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).json(&json!({"on": true})).build().unwrap();
 
     ret.push_str(&format!("{:#?}", req));
     ret.push_str("\n---\n");
