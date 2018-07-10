@@ -62,7 +62,7 @@ fn device_property_bool(device: String, prop: String, yn: bool) -> String {
     ret
 }
 
-#[get("/<device>/<prop>/<int>")]
+#[get("/<device>/<prop>/<int>", rank = 1)]
 fn device_property_uint(device: String, prop: String, int: u32) -> String {
     let mut ret = String::new();
 
