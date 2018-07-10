@@ -40,14 +40,12 @@ fn get_db() -> String {
 }
 
 #[get("/feeder/on")]
-fn feeder_on() -> &'static str {
+fn feeder_on() -> String {
     dotenv().ok();
 
     let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
 
-    requests::get(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).unwrap();
-
-    "done"
+    format!("{:#?}", requests::get(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).unwrap())
 }
 
 fn main() {
