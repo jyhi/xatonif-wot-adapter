@@ -51,7 +51,8 @@ fn device_property_bool(device: String, prop: String, yn: bool) -> String {
 
     dotenv().ok();
 
-    let ip = env::var(&format!("{}_IP", device.to_uppercase())).expect(&format!("{}_IP not set!", device.to_uppercase()));
+    let env_name = device.replace("-", "_").to_uppercase();
+    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
     let client = Client::new();
     let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: yn})).build().unwrap();
 
@@ -68,7 +69,8 @@ fn device_property_uint(device: String, prop: String, int: u32) -> String {
 
     dotenv().ok();
 
-    let ip = env::var(&format!("{}_IP", device.to_uppercase())).expect(&format!("{}_IP not set!", device.to_uppercase()));
+    let env_name = device.replace("-", "_").to_uppercase();
+    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
     let client = Client::new();
     let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: int})).build().unwrap();
 
