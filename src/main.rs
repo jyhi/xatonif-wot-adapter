@@ -48,7 +48,7 @@ fn feeder_on() -> String {
 
     let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
     let client = Client::new();
-    let req = client.put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).json(r#"{"on":true}"#).build().unwrap();
+    let req = client.put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).json("{on: true}").build().unwrap();
 
     ret.push_str(&format!("{:#?}", req));
     ret.push_str("\n---\n");
