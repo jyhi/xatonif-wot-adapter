@@ -1,11 +1,35 @@
-extern crate diesel;
-
 use diesel::mysql::types::Datetime;
 
+#[derive(Queryable)]
+pub struct Device {
+    id: usize,
+    name: Option<String>,
+    type_: Option<String>,
+    desc: Option<String>,
+    apid: usize,
+    aaid: usize,
+    aeid: usize,
+}
 
-pub struct task_list {
-    pub id: u32,
-    pub user_id: u32,
-    pub start_time: Datetime,
-    pub description: String,
+#[derive(Queryable)]
+pub struct Property {
+    id: usize,
+    name: Option<String>,
+    type_: Option<String>,
+    desc: Option<String>,
+    href: Option<String>,
+}
+
+#[derive(Queryable)]
+pub struct Action {
+    id: usize,
+    name: Option<String>,
+    desc: Option<String>,
+}
+
+#[derive(Queryable)]
+pub struct Event {
+    id: usize,
+    name: Option<String>,
+    desc: Option<String>,
 }
