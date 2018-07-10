@@ -5,7 +5,7 @@ authors = ["Junde Yhi <lmy441900@aosc.xyz>"]
 
 [dependencies]
 # curl = "~0.4.12"
-requests = "*"
+reqwest = "*"
 diesel = { version = "~1.3.2", features = ["mysql"] }
 dotenv = "*"
 rocket = "*"

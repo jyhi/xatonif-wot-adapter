@@ -6,7 +6,7 @@ extern crate rocket;
 extern crate diesel;
 extern crate dotenv;
 
-extern crate requests;
+extern crate reqwest;
 
 mod db;
 mod schema;
@@ -15,6 +15,7 @@ mod models;
 use diesel::prelude::*;
 use models::*;
 use schema::device_list::dsl::*;
+use reqwest::Client;
 use dotenv::dotenv;
 use std::env;
 
@@ -45,7 +46,7 @@ fn feeder_on() -> String {
 
     let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
 
-    format!("{:#?}", requests::get(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).unwrap())
+    format!("{:#?}", Client::new().put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).body("{\"on\"}:true").send())
 }
 
 fn main() {
