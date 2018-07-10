@@ -4,7 +4,8 @@ version = "0.1.0"
 authors = ["Junde Yhi <lmy441900@aosc.xyz>"]
 
 [dependencies]
-curl = "~0.4.12"
+# curl = "~0.4.12"
+requests = "*"
 diesel = { version = "~1.3.2", features = ["mysql"] }
 dotenv = "*"
 rocket = "*"

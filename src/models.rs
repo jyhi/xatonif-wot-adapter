@@ -1,35 +1,33 @@
-use diesel::mysql::types::Datetime;
-
 #[derive(Queryable)]
 pub struct Device {
-    id: usize,
-    name: Option<String>,
-    type_: Option<String>,
-    desc: Option<String>,
-    apid: usize,
-    aaid: usize,
-    aeid: usize,
+    pub id: u32,
+    pub name: Option<String>,
+    pub type_: Option<String>,
+    pub desc: Option<String>,
+    pub apid: u32,
+    pub aaid: u32,
+    pub aeid: u32,
 }
 
 #[derive(Queryable)]
 pub struct Property {
-    id: usize,
-    name: Option<String>,
-    type_: Option<String>,
-    desc: Option<String>,
-    href: Option<String>,
+    pub id: u32,
+    pub name: Option<String>,
+    pub type_: Option<String>,
+    pub desc: Option<String>,
+    pub href: Option<String>,
 }
 
 #[derive(Queryable)]
 pub struct Action {
-    id: usize,
-    name: Option<String>,
-    desc: Option<String>,
+    pub id: u32,
+    pub name: Option<String>,
+    pub desc: Option<String>,
 }
 
 #[derive(Queryable)]
 pub struct Event {
-    id: usize,
-    name: Option<String>,
-    desc: Option<String>,
+    pub id: u32,
+    pub name: Option<String>,
+    pub desc: Option<String>,
 }
