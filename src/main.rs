@@ -51,5 +51,5 @@ fn feeder_on() -> &'static str {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![root, get_db]).launch();
+    rocket::ignite().mount("/", routes![root, get_db, feeder_on]).launch();
 }
