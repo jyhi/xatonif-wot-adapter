@@ -45,15 +45,32 @@ fn get_db() -> String {
     ret
 }
 
-#[get("/feeder/on")]
-fn feeder_on() -> String {
+#[get("/<device>/<prop>/<yn>")]
+fn device_property_bool(device: String, prop: String, yn: bool) -> String {
     let mut ret = String::new();
 
     dotenv().ok();
 
-    let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
+    let ip = env::var(&format!("{}_IP", device.to_uppercase())).expect(&format!("{}_IP not set!", device.to_uppercase()));
     let client = Client::new();
-    let req = client.put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).json(&json!({"on": true})).build().unwrap();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: yn})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
+
+    ret
+}
+
+#[get("/<device>/<prop>/<int>")]
+fn device_property_uint(device: String, prop: String, int: u32) -> String {
+    let mut ret = String::new();
+
+    dotenv().ok();
+
+    let ip = env::var(&format!("{}_IP", device.to_uppercase())).expect(&format!("{}_IP not set!", device.to_uppercase()));
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: int})).build().unwrap();
 
     ret.push_str(&format!("{:#?}", req));
     ret.push_str("\n---\n");
@@ -63,5 +80,5 @@ fn feeder_on() -> String {
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![root, get_db, feeder_on]).launch();
+    rocket::ignite().mount("/", routes![root, get_db, device_property_bool, device_property_uint]).launch();
 }
