@@ -100,5 +100,5 @@ fn device_property_string(device: String, prop: String, string: String) -> Strin
 }
 
 fn main() {
-    rocket::ignite().mount("/", routes![root, get_db, device_property_bool, device_property_uint]).launch();
+    rocket::ignite().mount("/", routes![root, get_db, device_property_bool, device_property_uint, device_property_string]).launch();
 }
