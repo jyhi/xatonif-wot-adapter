@@ -81,6 +81,24 @@ fn device_property_uint(device: String, prop: String, int: u32) -> String {
     ret
 }
 
+#[get("/<device>/<prop>/<string>", rank = 2)]
+fn device_property_string(device: String, prop: String, string: String) -> String {
+    let mut ret = String::new();
+
+    dotenv().ok();
+
+    let env_name = device.replace("-", "_").to_uppercase();
+    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: string})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
+
+    ret
+}
+
 fn main() {
     rocket::ignite().mount("/", routes![root, get_db, device_property_bool, device_property_uint]).launch();
 }
