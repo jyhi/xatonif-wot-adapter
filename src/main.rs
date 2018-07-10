@@ -16,6 +16,7 @@ use diesel::prelude::*;
 use models::*;
 use schema::device_list::dsl::*;
 use reqwest::Client;
+use reqwest::header::ContentType;
 use dotenv::dotenv;
 use std::env;
 
@@ -46,7 +47,7 @@ fn feeder_on() -> String {
 
     let feeder_ip = env::var("FEEDER_IP").expect("FEEDER_IP not set!");
 
-    format!("{:#?}", Client::new().put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).body("{\"on\"}:true").send())
+    format!("{:#?}", Client::new().put(&format!("http://{}/things/hatonif-feeder/properties/on", feeder_ip)).header(ContentType::json()).body("{\"on\"}:true").send())
 }
 
 fn main() {
