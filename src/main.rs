@@ -87,8 +87,9 @@ fn get_hashmap(dev_ip: State<HashMap<u32, String>>, ifttt: State<HashMap<u32, u3
     let mut ret = String::new();
 
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
-    ret.push_str(&format!("dev_ip = {:#?}", dev_ip));
-    ret.push_str(&format!("ifttt = {:#?}", ifttt));
+    ret.push_str(&format!("dev_ip = {:#?}", dev_ip.inner()));
+    ret.push_str("\n");
+    ret.push_str(&format!("ifttt = {:#?}", ifttt.inner()));
 
     ret
 }
