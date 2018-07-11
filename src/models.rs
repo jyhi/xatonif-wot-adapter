@@ -1,4 +1,4 @@
-#[derive(Queryable)]
+#[derive(Clone, Queryable)]
 pub struct Device {
     pub id: u32,
     pub name: Option<String>,

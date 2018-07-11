@@ -23,11 +23,6 @@ use rocket::State;
 
 use diesel::prelude::*;
 use models::*;
-use schema::device_list::dsl::*;
-use schema::device_properties::dsl::*;
-use schema::device_actions::dsl::*;
-use schema::device_events::dsl::*;
-use schema::task_edition::dsl::*;
 
 use dotenv::dotenv;
 use std::env;
@@ -41,9 +36,15 @@ fn root() -> &'static str {
 
 #[get("/db")]
 fn get_db() -> String {
+    use schema::device_list::dsl::*;
+    use schema::device_properties::dsl::*;
+    use schema::device_actions::dsl::*;
+    use schema::device_events::dsl::*;
+    use schema::task_edition::dsl::*;
+
     let mut ret = String::new();
 
-    let (things, properties, actions, events);
+    let (things, properties, actions, events, editions);
     {
         let conn = db::db_connect();
 
@@ -51,6 +52,7 @@ fn get_db() -> String {
         properties = device_properties.load::<Property>(&conn).expect("Error loading properties");
         actions = device_actions.load::<Action>(&conn).expect("Error loading actions");
         events = device_events.load::<Event>(&conn).expect("Error loading events");
+        editions = task_edition.load::<Ifttt>(&conn).expect("Error loading editions");
     }
 
     ret.push_str(&format!("There are total {} things recorded in the database:\n\n", things.len()));
@@ -79,6 +81,13 @@ fn get_db() -> String {
         ret.push_str(&format!("- #{}: {}, \"{}\"\n", e.id, e.name.unwrap_or("?".to_owned()), e.desc.unwrap_or("?".to_owned())));
     }
 
+    ret.push_str("\n");
+
+    ret.push_str(&format!("There are total {} editions recorded in the database:\n\n", editions.len()));
+    for e in editions {
+        ret.push_str(&format!("- #{}: {} -> {}\n", e.id, e.if_dev_id, e.then_dev_id));
+    }
+
     ret
 }
 
@@ -90,6 +99,69 @@ fn get_hashmap(dev_ip: State<HashMap<u32, String>>, ifttt: State<HashMap<u32, u3
     ret.push_str(&format!("dev_ip = {:#?}", dev_ip.inner()));
     ret.push_str("\n");
     ret.push_str(&format!("ifttt = {:#?}", ifttt.inner()));
+
+    ret
+}
+
+#[get("/<dev_id>/<prop>/<yn>")]
+fn device_id_property_bool(dev_id: u32, prop: String, yn: bool, dev_ip: State<HashMap<u32, String>>) -> String {
+    use schema::device_list::dsl::*;
+
+    let mut ret = String::new();
+
+    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
+    let dev_name = {
+        let db_conn = db::db_connect();
+        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
+    };
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: yn})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
+
+    ret
+}
+
+#[get("/<dev_id>/<prop>/<int>", rank = 1)]
+fn device_id_property_uint(dev_id: u32, prop: String, int: u32, dev_ip: State<HashMap<u32, String>>) -> String {
+    use schema::device_list::dsl::*;
+
+    let mut ret = String::new();
+
+    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
+    let dev_name = {
+        let db_conn = db::db_connect();
+        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
+    };
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: int})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
+
+    ret
+}
+
+#[get("/<dev_id>/<prop>/<string>", rank = 2)]
+fn device_id_property_string(dev_id: u32, prop: String, string: u32, dev_ip: State<HashMap<u32, String>>) -> String {
+    use schema::device_list::dsl::*;
+
+    let mut ret = String::new();
+
+    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
+    let dev_name = {
+        let db_conn = db::db_connect();
+        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
+    };
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: string})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
 
     ret
 }
@@ -149,6 +221,8 @@ fn device_property_string(device: String, prop: String, string: String) -> Strin
 }
 
 fn build_dev_ip_map() -> HashMap<u32, String> {
+    use schema::device_list::dsl::*;
+
     let mut dev_ip: HashMap<u32, String> = HashMap::new();
 
     dotenv().ok();
@@ -169,6 +243,8 @@ fn build_dev_ip_map() -> HashMap<u32, String> {
 }
 
 fn build_ifttt_map() -> HashMap<u32, u32> {
+    use schema::task_edition::dsl::*;
+
     let mut ifttt: HashMap<u32, u32> = HashMap::new();
 
     let rels = {
