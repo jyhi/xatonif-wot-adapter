@@ -106,9 +106,9 @@ fn get_hashmap(dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: State<
     let locked_ifttt    = ifttt.lock().unwrap();
 
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
-    ret.push_str(&format!("dev_info = {:#?}", locked_dev_info));
+    ret.push_str(&format!("dev_info = {:#?}", *locked_dev_info));
     ret.push_str("\n");
-    ret.push_str(&format!("ifttt = {:#?}", locked_ifttt));
+    ret.push_str(&format!("ifttt = {:#?}", *locked_ifttt));
 
     ret
 }
