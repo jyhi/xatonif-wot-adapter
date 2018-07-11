@@ -267,6 +267,9 @@ fn main() {
         .mount("/", routes![root,
                             get_db,
                             get_hashmap,
+                            device_id_property_bool,
+                            device_id_property_uint,
+                            device_id_property_string,
                             device_property_bool,
                             device_property_uint,
                             device_property_string])
