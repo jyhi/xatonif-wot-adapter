@@ -173,6 +173,7 @@ fn main() {
     rocket::ignite()
         .mount("/", routes![root,
                             get_db,
+                            get_hashmap,
                             device_property_bool,
                             device_property_uint,
                             device_property_string])
