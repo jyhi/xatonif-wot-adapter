@@ -218,6 +218,7 @@ fn main() {
 
     rocket::ignite()
         .mount("/", routes![root,
+                            reload_ifttt,
                             get_db,
                             get_hashmap,
                             device_property_bool,
