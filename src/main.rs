@@ -29,6 +29,12 @@ use std::env;
 
 use reqwest::Client;
 
+#[derive(Debug)]
+struct DeviceNameIp {
+    name: String,
+    ip: String,
+}
+
 #[get("/")]
 fn root() -> &'static str {
     "Hello world!"
@@ -92,138 +98,69 @@ fn get_db() -> String {
 }
 
 #[get("/hashmap")]
-fn get_hashmap(dev_ip: State<HashMap<u32, String>>, ifttt: State<HashMap<u32, u32>>) -> String {
+fn get_hashmap(dev_info: State<HashMap<u32, DeviceNameIp>>, ifttt: State<HashMap<u32, u32>>) -> String {
     let mut ret = String::new();
 
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
-    ret.push_str(&format!("dev_ip = {:#?}", dev_ip.inner()));
+    ret.push_str(&format!("dev_info = {:#?}", dev_info.inner()));
     ret.push_str("\n");
     ret.push_str(&format!("ifttt = {:#?}", ifttt.inner()));
 
     ret
 }
 
-#[get("/<dev_id>/<prop>/<yn>")]
-fn device_id_property_bool(dev_id: u32, prop: String, yn: bool, dev_ip: State<HashMap<u32, String>>) -> String {
-    use schema::device_list::dsl::*;
-
+#[get("/<dev_id>/<prop>/<yn>", rank = 0)]
+fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
     let mut ret = String::new();
 
-    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
-    let dev_name = {
-        let db_conn = db::db_connect();
-        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
-    };
+    let dev = dev_info.get(&dev_id).unwrap();
     let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: yn})).build().unwrap();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: yn})).build().unwrap();
 
     ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
+    ret.push_str("\n\n---\n\n");
     ret.push_str(&format!("{:#?}", client.execute(req)));
 
     ret
 }
 
 #[get("/<dev_id>/<prop>/<int>", rank = 1)]
-fn device_id_property_uint(dev_id: u32, prop: String, int: u32, dev_ip: State<HashMap<u32, String>>) -> String {
-    use schema::device_list::dsl::*;
-
+fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
     let mut ret = String::new();
 
-    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
-    let dev_name = {
-        let db_conn = db::db_connect();
-        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
-    };
+    dotenv().ok();
+
+    let dev = dev_info.get(&dev_id).unwrap();
     let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: int})).build().unwrap();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: int})).build().unwrap();
 
     ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
+    ret.push_str("\n\n---\n\n");
     ret.push_str(&format!("{:#?}", client.execute(req)));
 
     ret
 }
 
 #[get("/<dev_id>/<prop>/<string>", rank = 2)]
-fn device_id_property_string(dev_id: u32, prop: String, string: String, dev_ip: State<HashMap<u32, String>>) -> String {
+fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
+    let mut ret = String::new();
+
+
+    let dev = dev_info.get(&dev_id).unwrap();
+    let client = Client::new();
+    let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: string})).build().unwrap();
+
+    ret.push_str(&format!("{:#?}", req));
+    ret.push_str("\n---\n");
+    ret.push_str(&format!("{:#?}", client.execute(req)));
+
+    ret
+}
+
+fn build_dev_info_map() -> HashMap<u32, DeviceNameIp> {
     use schema::device_list::dsl::*;
 
-    let mut ret = String::new();
-
-    let ip = dev_ip.get(&dev_id).expect(&format!("Requested device ID {} does not exist!", dev_id));
-    let dev_name = {
-        let db_conn = db::db_connect();
-        device_list.filter(id.eq(dev_id)).limit(1).load::<Device>(&db_conn).unwrap()[0].clone().name.unwrap()
-    };
-    let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, dev_name, prop)).json(&json!({prop: string})).build().unwrap();
-
-    ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
-    ret.push_str(&format!("{:#?}", client.execute(req)));
-
-    ret
-}
-
-#[get("/<device>/<prop>/<yn>", rank = 3)]
-fn device_property_bool(device: String, prop: String, yn: bool) -> String {
-    let mut ret = String::new();
-
-    dotenv().ok();
-
-    let env_name = device.replace("-", "_").to_uppercase();
-    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
-    let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: yn})).build().unwrap();
-
-    ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
-    ret.push_str(&format!("{:#?}", client.execute(req)));
-
-    ret
-}
-
-#[get("/<device>/<prop>/<int>", rank = 4)]
-fn device_property_uint(device: String, prop: String, int: u32) -> String {
-    let mut ret = String::new();
-
-    dotenv().ok();
-
-    let env_name = device.replace("-", "_").to_uppercase();
-    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
-    let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: int})).build().unwrap();
-
-    ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
-    ret.push_str(&format!("{:#?}", client.execute(req)));
-
-    ret
-}
-
-#[get("/<device>/<prop>/<string>", rank = 5)]
-fn device_property_string(device: String, prop: String, string: String) -> String {
-    let mut ret = String::new();
-
-    dotenv().ok();
-
-    let env_name = device.replace("-", "_").to_uppercase();
-    let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
-    let client = Client::new();
-    let req = client.put(&format!("http://{}/things/{}/properties/{}", ip, device, prop)).json(&json!({prop: string})).build().unwrap();
-
-    ret.push_str(&format!("{:#?}", req));
-    ret.push_str("\n---\n");
-    ret.push_str(&format!("{:#?}", client.execute(req)));
-
-    ret
-}
-
-fn build_dev_ip_map() -> HashMap<u32, String> {
-    use schema::device_list::dsl::*;
-
-    let mut dev_ip: HashMap<u32, String> = HashMap::new();
+    let mut dev_info: HashMap<u32, DeviceNameIp> = HashMap::new();
 
     dotenv().ok();
 
@@ -233,13 +170,14 @@ fn build_dev_ip_map() -> HashMap<u32, String> {
     };
 
     for d in devices {
-        let env_name = d.name.unwrap_or("?".to_owned()).to_uppercase().replace("-", "_");
-        if let Ok(ip) = env::var(&format!("{}_IP", env_name)) {
-            dev_ip.insert(d.id, ip);
+        let dev_name = d.name.unwrap_or("?".to_owned());
+        let env_name = dev_name.to_uppercase().replace("-", "_");
+        if let Ok(dev_ip) = env::var(&format!("{}_IP", env_name)) {
+            dev_info.insert(d.id, DeviceNameIp { name: dev_name, ip: dev_ip });
         }
     }
 
-    dev_ip
+    dev_info
 }
 
 fn build_ifttt_map() -> HashMap<u32, u32> {
@@ -260,20 +198,17 @@ fn build_ifttt_map() -> HashMap<u32, u32> {
 }
 
 fn main() {
-    let dev_ip: HashMap<u32, String> = build_dev_ip_map();
+    let dev_info: HashMap<u32, DeviceNameIp> = build_dev_info_map();
     let ifttt: HashMap<u32, u32> = build_ifttt_map();
 
     rocket::ignite()
         .mount("/", routes![root,
                             get_db,
                             get_hashmap,
-                            device_id_property_bool,
-                            device_id_property_uint,
-                            device_id_property_string,
                             device_property_bool,
                             device_property_uint,
                             device_property_string])
-        .manage(dev_ip)
+        .manage(dev_info)
         .manage(ifttt)
         .launch();
 }
