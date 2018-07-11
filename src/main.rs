@@ -14,8 +14,10 @@ extern crate serde_json;
 extern crate reqwest;
 
 mod db;
+mod device;
 mod schema;
 mod models;
+mod handler;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -29,12 +31,6 @@ use dotenv::dotenv;
 use std::env;
 
 use reqwest::Client;
-
-#[derive(Debug)]
-struct DeviceNameIp {
-    name: String,
-    ip: String,
-}
 
 #[get("/")]
 fn root() -> &'static str {
@@ -218,6 +214,8 @@ fn build_ifttt_map() -> HashMap<u32, u32> {
 fn main() {
     let dev_info: HashMap<u32, DeviceNameIp> = build_dev_info_map();
     let ifttt: HashMap<u32, u32> = build_ifttt_map();
+
+    handler::handler(Mutex::new(dev_info), Mutex::new(ifttt));
 
     rocket::ignite()
         .mount("/", routes![root,
