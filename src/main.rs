@@ -51,15 +51,21 @@ fn get_db() -> String {
         ret.push_str(&format!("- #{}: {} ({}), \"{}\"\n", t.id, t.name.unwrap_or("?".to_owned()), t.type_.unwrap_or("?".to_owned()), t.desc.unwrap_or("?".to_owned())));
     }
 
+    ret.push_str("\n");
+
     ret.push_str(&format!("There are total {} properties recorded in the database:\n\n", properties.len()));
     for p in properties {
         ret.push_str(&format!("- #{}: {} ({}), \"{}\", at {}\n", p.id, p.name.unwrap_or("?".to_owned()), p.type_.unwrap_or("?".to_owned()), p.desc.unwrap_or("?".to_owned()), p.href.unwrap_or("?".to_owned())));
     }
 
+    ret.push_str("\n");
+
     ret.push_str(&format!("There are total {} actions recorded in the database:\n\n", actions.len()));
     for a in actions {
         ret.push_str(&format!("- #{}: {}, \"{}\"\n", a.id, a.name.unwrap_or("?".to_owned()), a.desc.unwrap_or("?".to_owned())));
     }
+
+    ret.push_str("\n");
 
     ret.push_str(&format!("There are total {} events recorded in the database:\n\n", events.len()));
     for e in events {
