@@ -158,9 +158,9 @@ fn build_dev_ip_map() -> HashMap<u32, String> {
 
     for d in devices {
         let env_name = d.name.unwrap_or("?".to_owned()).to_uppercase().replace("-", "_");
-        let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
-
-        dev_ip.insert(d.id, ip);
+        if let Ok(ip) = env::var(&format!("{}_IP", env_name)) {
+            dev_ip.insert(d.id, ip);
+        }
     }
 
     dev_ip
