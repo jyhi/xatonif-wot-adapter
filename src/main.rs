@@ -18,6 +18,7 @@ mod schema;
 mod models;
 
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use rocket::State;
 
@@ -98,22 +99,23 @@ fn get_db() -> String {
 }
 
 #[get("/hashmap")]
-fn get_hashmap(dev_info: State<HashMap<u32, DeviceNameIp>>, ifttt: State<HashMap<u32, u32>>) -> String {
+fn get_hashmap(dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: State<Mutex<HashMap<u32, u32>>>) -> String {
     let mut ret = String::new();
 
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
-    ret.push_str(&format!("dev_info = {:#?}", dev_info.inner()));
+    ret.push_str(&format!("dev_info = {:#?}", dev_info.inner().lock().unwrap()));
     ret.push_str("\n");
-    ret.push_str(&format!("ifttt = {:#?}", ifttt.inner()));
+    ret.push_str(&format!("ifttt = {:#?}", ifttt.inner().lock().unwrap()));
 
     ret
 }
 
 #[get("/<dev_id>/<prop>/<yn>", rank = 0)]
-fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
+fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
     let mut ret = String::new();
 
-    let dev = dev_info.get(&dev_id).unwrap();
+    let lock = dev_info.lock().unwrap();
+    let dev = lock.get(&dev_id).unwrap();
     let client = Client::new();
     let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: yn})).build().unwrap();
 
@@ -125,12 +127,11 @@ fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<Has
 }
 
 #[get("/<dev_id>/<prop>/<int>", rank = 1)]
-fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
+fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
     let mut ret = String::new();
 
-    dotenv().ok();
-
-    let dev = dev_info.get(&dev_id).unwrap();
+    let lock = dev_info.lock().unwrap();
+    let dev = lock.get(&dev_id).unwrap();
     let client = Client::new();
     let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: int})).build().unwrap();
 
@@ -142,11 +143,11 @@ fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<Has
 }
 
 #[get("/<dev_id>/<prop>/<string>", rank = 2)]
-fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: State<HashMap<u32, DeviceNameIp>>) -> String {
+fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
     let mut ret = String::new();
 
-
-    let dev = dev_info.get(&dev_id).unwrap();
+    let lock = dev_info.lock().unwrap();
+    let dev = lock.get(&dev_id).unwrap();
     let client = Client::new();
     let req = client.put(&format!("http://{}/things/{}/properties/{}", dev.ip, dev.name, prop)).json(&json!({prop: string})).build().unwrap();
 
@@ -155,6 +156,20 @@ fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: S
     ret.push_str(&format!("{:#?}", client.execute(req)));
 
     ret
+}
+
+#[get("/reload")]
+fn reload_ifttt(ifttt: State<Mutex<HashMap<u32, u32>>>) -> &'static str {
+    let ifttt_from_db = build_ifttt_map();
+
+    let mut locked_ifttt = ifttt.lock().unwrap();
+
+    locked_ifttt.clear();
+    for rel in ifttt_from_db {
+        locked_ifttt.insert(rel.0, rel.1);
+    }
+
+    "done"
 }
 
 fn build_dev_info_map() -> HashMap<u32, DeviceNameIp> {
@@ -208,7 +223,7 @@ fn main() {
                             device_property_bool,
                             device_property_uint,
                             device_property_string])
-        .manage(dev_info)
-        .manage(ifttt)
+        .manage(Mutex::new(dev_info))
+        .manage(Mutex::new(ifttt))
         .launch();
 }
