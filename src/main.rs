@@ -20,6 +20,9 @@ mod models;
 use diesel::prelude::*;
 use models::*;
 use schema::device_list::dsl::*;
+use schema::device_properties::dsl::*;
+use schema::device_actions::dsl::*;
+use schema::device_events::dsl::*;
 use dotenv::dotenv;
 use std::env;
 use reqwest::Client;
@@ -33,13 +36,40 @@ fn root() -> &'static str {
 fn get_db() -> String {
     let mut ret = String::new();
 
-    let conn = db::db_connect();
-    let result = device_list.load::<Device>(&conn)
-        .expect("Error loading devices");
+    let (things, properties, actions, events);
+    {
+        let conn = db::db_connect();
 
-    ret.push_str(&format!("Displaying {} things:\n\n", result.len()));
-    for d in result {
-        ret.push_str(&format!("- #{}: {} ({}), \"{}\"", d.id, d.name.unwrap_or("?".to_owned()), d.type_.unwrap_or("?".to_owned()), d.desc.unwrap_or("?".to_owned())));
+        things = device_list.load::<Device>(&conn).expect("Error loading devices");
+        properties = device_properties.load::<Property>(&conn).expect("Error loading properties");
+        actions = device_actions.load::<Action>(&conn).expect("Error loading actions");
+        events = device_events.load::<Event>(&conn).expect("Error loading events");
+    }
+
+    ret.push_str(&format!("There are total {} things recorded in the database:\n\n", things.len()));
+    for t in things {
+        ret.push_str(&format!("- #{}: {} ({}), \"{}\"\n", t.id, t.name.unwrap_or("?".to_owned()), t.type_.unwrap_or("?".to_owned()), t.desc.unwrap_or("?".to_owned())));
+    }
+
+    ret.push_str("\n===\n");
+
+    ret.push_str(&format!("There are total {} properties recorded in the database:\n\n", properties.len()));
+    for p in properties {
+        ret.push_str(&format!("- #{}: {} ({}), \"{}\", at {}\n", p.id, p.name.unwrap_or("?".to_owned()), p.type_.unwrap_or("?".to_owned()), p.desc.unwrap_or("?".to_owned()), p.href.unwrap_or("?".to_owned())));
+    }
+
+    ret.push_str("\n===\n");
+
+    ret.push_str(&format!("There are total {} actions recorded in the database:\n\n", actions.len()));
+    for a in actions {
+        ret.push_str(&format!("- #{}: {}, \"{}\"\n", a.id, a.name.unwrap_or("?".to_owned()), a.desc.unwrap_or("?".to_owned())));
+    }
+
+    ret.push_str("\n===\n");
+
+    ret.push_str(&format!("There are total {} events recorded in the database:\n\n", events.len()));
+    for e in events {
+        ret.push_str(&format!("- #{}: {}, \"{}\"\n", e.id, e.name.unwrap_or("?".to_owned()), e.desc.unwrap_or("?".to_owned())));
     }
 
     ret
