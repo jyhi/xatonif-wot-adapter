@@ -102,12 +102,29 @@ fn get_db() -> String {
 fn get_hashmap(dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: State<Mutex<HashMap<u32, u32>>>) -> String {
     let mut ret = String::new();
 
+    let locked_dev_info = dev_info.lock().unwrap();
+    let locked_ifttt    = ifttt.lock().unwrap();
+
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
-    ret.push_str(&format!("dev_info = {:#?}", dev_info.inner().lock().unwrap()));
+    ret.push_str(&format!("dev_info = {:#?}", locked_dev_info));
     ret.push_str("\n");
-    ret.push_str(&format!("ifttt = {:#?}", ifttt.inner().lock().unwrap()));
+    ret.push_str(&format!("ifttt = {:#?}", locked_ifttt));
 
     ret
+}
+
+#[get("/reload")]
+fn reload_ifttt(ifttt: State<Mutex<HashMap<u32, u32>>>) -> &'static str {
+    let ifttt_from_db = build_ifttt_map();
+
+    let mut locked_ifttt = ifttt.lock().unwrap();
+
+    locked_ifttt.clear();
+    for rel in ifttt_from_db {
+        locked_ifttt.insert(rel.0, rel.1);
+    }
+
+    "done"
 }
 
 #[get("/<dev_id>/<prop>/<yn>", rank = 0)]
@@ -156,20 +173,6 @@ fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: S
     ret.push_str(&format!("{:#?}", client.execute(req)));
 
     ret
-}
-
-#[get("/reload")]
-fn reload_ifttt(ifttt: State<Mutex<HashMap<u32, u32>>>) -> &'static str {
-    let ifttt_from_db = build_ifttt_map();
-
-    let mut locked_ifttt = ifttt.lock().unwrap();
-
-    locked_ifttt.clear();
-    for rel in ifttt_from_db {
-        locked_ifttt.insert(rel.0, rel.1);
-    }
-
-    "done"
 }
 
 fn build_dev_info_map() -> HashMap<u32, DeviceNameIp> {
