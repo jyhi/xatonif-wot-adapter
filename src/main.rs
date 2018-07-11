@@ -17,14 +17,20 @@ mod db;
 mod schema;
 mod models;
 
+use std::collections::HashMap;
+
+use rocket::State;
+
 use diesel::prelude::*;
 use models::*;
 use schema::device_list::dsl::*;
 use schema::device_properties::dsl::*;
 use schema::device_actions::dsl::*;
 use schema::device_events::dsl::*;
+
 use dotenv::dotenv;
 use std::env;
+
 use reqwest::Client;
 
 #[get("/")]
@@ -71,6 +77,17 @@ fn get_db() -> String {
     for e in events {
         ret.push_str(&format!("- #{}: {}, \"{}\"\n", e.id, e.name.unwrap_or("?".to_owned()), e.desc.unwrap_or("?".to_owned())));
     }
+
+    ret
+}
+
+#[get("/hashmap")]
+fn get_hashmap(dev_ip: State<HashMap<u32, String>>) -> String {
+    let mut ret = String::new();
+
+    ret.push_str("Displaying std::collection::HashMap status:\n\n");
+    ret.push_str(&format!("dev_ip = {:#?}", dev_ip));
+    // ret.push_str(&format!("ifttt = {:#?}", ifttt));
 
     ret
 }
@@ -129,6 +146,36 @@ fn device_property_string(device: String, prop: String, string: String) -> Strin
     ret
 }
 
+fn build_dev_ip_map() -> HashMap<u32, String> {
+    let mut dev_ip: HashMap<u32, String> = HashMap::new();
+
+    dotenv().ok();
+
+    let devices = {
+        let db_conn = db::db_connect();
+        device_list.load::<Device>(&db_conn).expect("Error loading devices")
+    };
+
+    for d in devices {
+        let env_name = d.name.unwrap_or("?".to_owned()).to_uppercase().replace("-", "_");
+        let ip = env::var(&format!("{}_IP", env_name)).expect(&format!("{}_IP not set!", env_name));
+
+        dev_ip.insert(d.id, ip);
+    }
+
+    dev_ip
+}
+
 fn main() {
-    rocket::ignite().mount("/", routes![root, get_db, device_property_bool, device_property_uint, device_property_string]).launch();
+    let dev_ip: HashMap<u32, String> = build_dev_ip_map();
+    // let ifttt: HashMap<u32, u32>;
+
+    rocket::ignite()
+        .mount("/", routes![root,
+                            get_db,
+                            device_property_bool,
+                            device_property_uint,
+                            device_property_string])
+        .manage(dev_ip)
+        .launch();
 }
