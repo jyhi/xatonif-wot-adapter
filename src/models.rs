@@ -31,3 +31,11 @@ pub struct Event {
     pub name: Option<String>,
     pub desc: Option<String>,
 }
+
+#[derive(Queryable)]
+pub struct Ifttt {
+    pub id: u32,
+    pub task_id: u32,
+    pub if_dev_id: u32,
+    pub then_dev_id: u32,
+}

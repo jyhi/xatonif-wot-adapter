@@ -27,6 +27,7 @@ use schema::device_list::dsl::*;
 use schema::device_properties::dsl::*;
 use schema::device_actions::dsl::*;
 use schema::device_events::dsl::*;
+use schema::task_edition::dsl::*;
 
 use dotenv::dotenv;
 use std::env;
@@ -82,12 +83,12 @@ fn get_db() -> String {
 }
 
 #[get("/hashmap")]
-fn get_hashmap(dev_ip: State<HashMap<u32, String>>) -> String {
+fn get_hashmap(dev_ip: State<HashMap<u32, String>>, ifttt: State<HashMap<u32, u32>>) -> String {
     let mut ret = String::new();
 
     ret.push_str("Displaying std::collection::HashMap status:\n\n");
     ret.push_str(&format!("dev_ip = {:#?}", dev_ip));
-    // ret.push_str(&format!("ifttt = {:#?}", ifttt));
+    ret.push_str(&format!("ifttt = {:#?}", ifttt));
 
     ret
 }
@@ -166,9 +167,24 @@ fn build_dev_ip_map() -> HashMap<u32, String> {
     dev_ip
 }
 
+fn build_ifttt_map() -> HashMap<u32, u32> {
+    let mut ifttt: HashMap<u32, u32> = HashMap::new();
+
+    let rels = {
+        let db_conn = db::db_connect();
+        task_edition.load::<Ifttt>(&db_conn).expect("Error loading task IFTTTs")
+    };
+
+    for r in rels {
+        ifttt.insert(r.if_dev_id, r.then_dev_id);
+    }
+
+    ifttt
+}
+
 fn main() {
     let dev_ip: HashMap<u32, String> = build_dev_ip_map();
-    // let ifttt: HashMap<u32, u32>;
+    let ifttt: HashMap<u32, u32> = build_ifttt_map();
 
     rocket::ignite()
         .mount("/", routes![root,
@@ -178,5 +194,6 @@ fn main() {
                             device_property_uint,
                             device_property_string])
         .manage(dev_ip)
+        .manage(ifttt)
         .launch();
 }

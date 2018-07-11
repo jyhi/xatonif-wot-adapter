@@ -78,6 +78,16 @@ table! {
         task_id -> Unsigned<Integer>,
         dev_id -> Unsigned<Integer>,
         id -> Integer,
+        dev_status -> Integer,
+    }
+}
+
+table! {
+    task_edition (id) {
+        id -> Unsigned<Integer>,
+        task_id -> Unsigned<Integer>,
+        if_device_id -> Unsigned<Integer>,
+        then_device_id -> Unsigned<Integer>,
     }
 }
 
@@ -85,8 +95,10 @@ table! {
     task_list (id) {
         id -> Unsigned<Integer>,
         user_id -> Unsigned<Integer>,
-        start_time -> Datetime,
+        start_time -> Text,
         description -> Nullable<Text>,
+        task_name -> Text,
+        task_sta -> Integer,
     }
 }
 
@@ -135,6 +147,7 @@ allow_tables_to_appear_in_same_query!(
     device_list,
     device_properties,
     task_assoc_devs,
+    task_edition,
     task_list,
     user_action_logs,
     user_list,
