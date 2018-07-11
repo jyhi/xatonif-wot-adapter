@@ -146,7 +146,7 @@ fn device_id_property_uint(dev_id: u32, prop: String, int: u32, dev_ip: State<Ha
 }
 
 #[get("/<dev_id>/<prop>/<string>", rank = 2)]
-fn device_id_property_string(dev_id: u32, prop: String, string: u32, dev_ip: State<HashMap<u32, String>>) -> String {
+fn device_id_property_string(dev_id: u32, prop: String, string: String, dev_ip: State<HashMap<u32, String>>) -> String {
     use schema::device_list::dsl::*;
 
     let mut ret = String::new();
