@@ -32,7 +32,7 @@ pub struct Event {
     pub desc: Option<String>,
 }
 
-#[derive(Queryable)]
+#[derive(Debug, Queryable)]
 pub struct Ifttt {
     pub id: u32,
     pub task_id: u32,
