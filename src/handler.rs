@@ -10,7 +10,7 @@ pub struct DeviceNameIp {
     pub ip: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct PropertyOn {
     on: bool
 }
@@ -38,22 +38,36 @@ pub fn handler(dev_info: Arc<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: Arc<Mute
 }
 
 fn hack_poll_thing_property_on(ip: &str, name: &str) -> bool {
-    println!("http://{}/things/{}/properties/on", ip, name);
-
-    let resp: PropertyOn = Client::new()
+    let resp = Client::new()
         .get(&format!("http://{}/things/{}/properties/on", ip, name))
-        .send().unwrap()
-        .json().unwrap();
+        .send();
 
-    resp.on
+    let json: PropertyOn;
+    if let Some(mut resp) = resp.ok() {
+        json = resp.json().unwrap();
+    } else {
+        json = PropertyOn { on: false };
+    }
+
+    eprintln!("GET http://{}/things/{}/properties/on -> {:?}", ip, name, json);
+
+    json.on
 }
 
 fn hack_put_thing_property_on(ip: &str, name: &str, v: bool) -> bool {
-    let resp: PropertyOn = Client::new()
+    let resp = Client::new()
         .put(&format!("http://{}/things/{}/properties/on", ip, name))
         .json(&PropertyOn { on: v })
-        .send().unwrap()
-        .json().unwrap();
+        .send();
 
-    resp.on
+    let json: PropertyOn;
+    if let Some(mut resp) = resp.ok() {
+        json = resp.json().unwrap();
+    } else {
+        json = PropertyOn { on: false };
+    }
+
+    eprintln!("PUT http://{}/things/{}/properties/on -> {:?}", ip, name, json);
+
+    json.on
 }
