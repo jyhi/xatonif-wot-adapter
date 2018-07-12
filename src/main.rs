@@ -218,12 +218,15 @@ fn main() {
     let dev_info = Arc::new(Mutex::new(build_dev_info_map()));
     let ifttt    = Arc::new(Mutex::new(build_ifttt_map()));
 
+    println!("{:#?}", dev_info);
+    println!("{:#?}", ifttt);
+
     let dev_info_handler = dev_info.clone();
     let ifttt_handler    = ifttt.clone();
 
-    thread::spawn(move || {
+    thread::Builder::new().name("handler".to_owned()).spawn(move || {
         handler(dev_info_handler, ifttt_handler);
-    });
+    }).unwrap();
 
     rocket::ignite()
         .mount("/", routes![root,
