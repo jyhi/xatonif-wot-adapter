@@ -37,6 +37,8 @@ pub fn handler(dev_info: Arc<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: Arc<Mute
 }
 
 fn hack_poll_thing_property_on(ip: &str, name: &str) -> bool {
+    println!("http://{}/things/{}/properties/on", ip, name);
+
     let resp: JsonSingleKeyVal = Client::new()
         .get(&format!("http://{}/things/{}/properties/on", ip, name))
         .send().unwrap()
