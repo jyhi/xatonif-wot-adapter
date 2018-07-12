@@ -17,6 +17,7 @@ struct PropertyOn {
 
 pub fn handler(dev_info: Arc<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: Arc<Mutex<HashMap<u32, u32>>>) {
     loop {
+        thread::sleep(Duration::from_millis(500));
         for (this, that) in ifttt.lock().unwrap().iter() {
             let (if_dev_info, then_dev_info);
             {
