@@ -207,11 +207,12 @@ fn build_ifttt_map() -> HashMap<u32, u32> {
         task_edition.load::<Ifttt>(&db_conn).expect("Error loading task IFTTTs")
     };
 
-    println!("{:#?}", rels);
-
     for r in rels {
+        println!("{:#?}", r);
         ifttt.insert(r.if_dev_id, r.then_dev_id);
     }
+
+    println!("{:#?}", ifttt);
 
     ifttt
 }
