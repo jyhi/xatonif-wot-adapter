@@ -9,18 +9,21 @@ extern crate dotenv;
 extern crate serde;
 #[macro_use]
 extern crate serde_json;
-// extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 
 extern crate reqwest;
 
 mod db;
-mod device;
 mod schema;
 mod models;
 mod handler;
 
+use handler::{DeviceNameIp, handler};
+
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 use rocket::State;
 
@@ -95,7 +98,7 @@ fn get_db() -> String {
 }
 
 #[get("/hashmap")]
-fn get_hashmap(dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: State<Mutex<HashMap<u32, u32>>>) -> String {
+fn get_hashmap(dev_info: State<Arc<Mutex<HashMap<u32, DeviceNameIp>>>>, ifttt: State<Arc<Mutex<HashMap<u32, u32>>>>) -> String {
     let mut ret = String::new();
 
     let locked_dev_info = dev_info.lock().unwrap();
@@ -110,7 +113,7 @@ fn get_hashmap(dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: State<
 }
 
 #[get("/reload")]
-fn reload_ifttt(ifttt: State<Mutex<HashMap<u32, u32>>>) -> &'static str {
+fn reload_ifttt(ifttt: State<Arc<Mutex<HashMap<u32, u32>>>>) -> &'static str {
     let ifttt_from_db = build_ifttt_map();
 
     let mut locked_ifttt = ifttt.lock().unwrap();
@@ -124,7 +127,7 @@ fn reload_ifttt(ifttt: State<Mutex<HashMap<u32, u32>>>) -> &'static str {
 }
 
 #[get("/<dev_id>/<prop>/<yn>", rank = 0)]
-fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
+fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<Arc<Mutex<HashMap<u32, DeviceNameIp>>>>) -> String {
     let mut ret = String::new();
 
     let lock = dev_info.lock().unwrap();
@@ -140,7 +143,7 @@ fn device_property_bool(dev_id: u32, prop: String, yn: bool, dev_info: State<Mut
 }
 
 #[get("/<dev_id>/<prop>/<int>", rank = 1)]
-fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
+fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<Arc<Mutex<HashMap<u32, DeviceNameIp>>>>) -> String {
     let mut ret = String::new();
 
     let lock = dev_info.lock().unwrap();
@@ -156,7 +159,7 @@ fn device_property_uint(dev_id: u32, prop: String, int: u32, dev_info: State<Mut
 }
 
 #[get("/<dev_id>/<prop>/<string>", rank = 2)]
-fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: State<Mutex<HashMap<u32, DeviceNameIp>>>) -> String {
+fn device_property_string(dev_id: u32, prop: String, string: String, dev_info: State<Arc<Mutex<HashMap<u32, DeviceNameIp>>>>) -> String {
     let mut ret = String::new();
 
     let lock = dev_info.lock().unwrap();
@@ -212,10 +215,15 @@ fn build_ifttt_map() -> HashMap<u32, u32> {
 }
 
 fn main() {
-    let dev_info: HashMap<u32, DeviceNameIp> = build_dev_info_map();
-    let ifttt: HashMap<u32, u32> = build_ifttt_map();
+    let dev_info = Arc::new(Mutex::new(build_dev_info_map()));
+    let ifttt    = Arc::new(Mutex::new(build_ifttt_map()));
 
-    handler::handler(Mutex::new(dev_info), Mutex::new(ifttt));
+    let dev_info_handler = dev_info.clone();
+    let ifttt_handler    = ifttt.clone();
+
+    thread::spawn(move || {
+        handler(dev_info_handler, ifttt_handler);
+    });
 
     rocket::ignite()
         .mount("/", routes![root,
@@ -225,7 +233,7 @@ fn main() {
                             device_property_bool,
                             device_property_uint,
                             device_property_string])
-        .manage(Mutex::new(dev_info))
-        .manage(Mutex::new(ifttt))
+        .manage(dev_info.clone())
+        .manage(ifttt.clone())
         .launch();
 }
