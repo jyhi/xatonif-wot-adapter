@@ -45,11 +45,13 @@ fn hack_poll_thing_property_on(ip: &str, name: &str) -> bool {
     let json: PropertyOn;
     if let Some(mut resp) = resp.ok() {
         json = resp.json().unwrap();
+        eprintln!("GET http://{}/things/{}/properties/on -> {:?}", ip, name, json);
     } else {
         json = PropertyOn { on: false };
+        eprintln!("GET http://{}/things/{}/properties/on -> ?", ip, name);
     }
 
-    eprintln!("GET http://{}/things/{}/properties/on -> {:?}", ip, name, json);
+
 
     json.on
 }
@@ -63,8 +65,10 @@ fn hack_put_thing_property_on(ip: &str, name: &str, v: bool) -> bool {
     let json: PropertyOn;
     if let Some(mut resp) = resp.ok() {
         json = resp.json().unwrap();
+        eprintln!("GET http://{}/things/{}/properties/on -> {:?}", ip, name, json);
     } else {
         json = PropertyOn { on: false };
+        eprintln!("GET http://{}/things/{}/properties/on -> ?", ip, name);
     }
 
     eprintln!("PUT http://{}/things/{}/properties/on -> {:?}", ip, name, json);
