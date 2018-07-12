@@ -55,7 +55,9 @@ fn hack_poll_thing_property_on(ip: &str, name: &str) -> bool {
 }
 
 fn hack_put_thing_property_on(ip: &str, name: &str, v: bool) {
-    eprintln!("PUT http://{}/things/{}/properties/on -> ?", ip, name);
+    let json = PropertyOn { on: v };
+
+    eprintln!("PUT http://{}/things/{}/properties/on {:?} -> ?", ip, name, json);
 
     // let resp = Client::new()
     //     .put(&format!("http://{}/things/{}/properties/on", ip, name))
@@ -71,6 +73,6 @@ fn hack_put_thing_property_on(ip: &str, name: &str, v: bool) {
 
     Client::new()
         .put(&format!("http://{}/things/{}/properties/on", ip, name))
-        .json(&PropertyOn { on: v })
+        .json(&json)
         .send().unwrap();
 }
