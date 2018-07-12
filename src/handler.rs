@@ -27,11 +27,11 @@ pub fn handler(dev_info: Arc<Mutex<HashMap<u32, DeviceNameIp>>>, ifttt: Arc<Mute
 
             if hack_poll_thing_property_on(&if_dev_info.ip, &if_dev_info.name) == true {
                 // XXX: Turn it off after 1s
-                thread::spawn(move || {
+                thread::Builder::new().name("hack_put".to_owned()).spawn(move || {
                     hack_put_thing_property_on(&then_dev_info.ip, &then_dev_info.name, true);
                     thread::sleep(Duration::from_secs(1));
                     hack_put_thing_property_on(&then_dev_info.ip, &then_dev_info.name, false);
-                }).join().unwrap();
+                }).unwrap().join().unwrap();
             }
         }
     }
